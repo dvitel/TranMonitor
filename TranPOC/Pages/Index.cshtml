@@ -1,0 +1,48 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "list";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Your work items</h1>
+    <div class="col-12 offset-lg-3 col-lg-6">
+        <div class="mb-2">
+            <a asp-area="" asp-page="New" class="btn btn-sm btn-primary py-0">New Item</a>
+            @if (Model.ShowDone) {
+                <a asp-area="" asp-page="Index" class="btn btn-sm btn-primary py-0">Actual</a>
+            } else {
+                <a asp-area="" asp-page="Index" asp-route-done="True" class="btn btn-sm btn-primary py-0">History</a>
+            }
+        </div>
+        @if (Model.ToDo.Count == 0) {
+            <div class="mb-1">
+                Hooray! You do not have items to do!
+            </div>
+        } else {
+            foreach (var item in Model.ToDo) {
+                <div class="mb-1">
+                    <div>Item #@item.Id</div>
+                    <div>@item.Desc</div>
+                    @if (item.DoneAt.HasValue) {
+                        <div class="small">done at @item.DoneAt.Value
+                            @if (item.RealTime.HasValue) {
+                                <span>took @item.RealTime.Value</span>
+                            }
+                        </div>
+                    } else {
+                        <div class="small">finish till @item.To, takes @item.EstimatedTime</div>
+                    }
+                    <div>
+                        <a asp-area="" class="small mr-3" asp-page="New" asp-route-id="@item.Id">modify</a>
+                        <form method="post" style="display: inline-block">
+                            <input type="hidden" name="Operation.Kind" value="Delete" />
+                            <input type="hidden" name="Operation.Ids" value="@item.Id" />
+                            <a href="#" class="small" onclick="askAndSubmit(this)">delete</a>
+                        </form>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>

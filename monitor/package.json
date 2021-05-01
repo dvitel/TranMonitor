@@ -1,0 +1,28 @@
+{
+  "name": "browser-agent",
+  "version": "1.0.5",
+  "description": "agent 4 general browser checks",
+  "main": "agent.js",
+  "scripts": {
+    "test": ""
+  },
+  "dependencies": {
+    "bson": "^4.0.0",
+    "jsonpath": "^1.1.1",
+    "pngjs": "^3.3.3",
+    "puppeteer": "^5.3.1",
+    "sha256": "^0.2.0",
+    "sharp": "^0.25.3",
+    "supports-webp": "^1.0.5",
+    "taskkill": "^2.0.0",
+    "uuid": "^3.4.0",
+    "xmldom": "^0.6.0",
+    "xpath": "0.0.32"
+  },
+  "author": "HT",
+  "license": "ISC",
+  "monitorSettings": {
+    "globalTransactionTimeoutMs": 40000,
+    "userAgent": "Mozilla/5.0 (compatible;HostTracker/2.0;TranMonitor;+http://www.host-tracker.com/)"
+  }
+}

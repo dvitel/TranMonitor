@@ -1,0 +1,59 @@
+{
+    "to": 40000,
+    "swidth": 1024,
+    "sheight": 768,
+    "headless": false,
+    "tran": [
+        {
+            "type": "goto",
+            "url": "https://localhost:5001/",
+            "timeout": 10000,
+            "cooldown": 1000
+        },
+        {
+            "type": "click",
+            "selector": { "type": "css", "query": "a:contains('New Item')"},
+            "cooldown": 3000
+        },
+        {
+            "type": "input",
+            "selector": { "type": "css", "query": "[name=Item.Desc]"},
+            "text": "This text should be interpolated and could contain metafunctions"
+        },
+        {
+            "type": "input",
+            "selector": { "type": "css", "query": "[name=Item.From]"},
+            "text": "2021-04-20T20:00"
+        },
+        {
+            "type": "input",
+            "selector": { "type": "css", "query": "[name=Item.To]"},
+            "text": "2021-04-25T20:00"
+        },     
+        {
+            "type": "input",
+            "selector": { "type": "css", "query": "[name=Item.EstimatedTime]"},
+            "text": "01:00:00"
+        }, 
+        {
+            "type": "click",
+            "selector": { "type": "css", "query": "button:contains('Save Item')"},
+            "cooldown": 3000
+        },  
+        {
+            "type": "goto",
+            "url": "https://localhost:5001/",
+            "timeout": 10000,
+            "cooldown": 1000
+        },                         
+        {
+            "type": "validate",
+            "policy": [
+                {
+                    "selector": { "type": "css", "query": "div:contains('This text should be interpolated and could contain metafunctions')" },
+                    "check": { "type": "exists" }
+                }
+            ]
+        }
+    ]
+}
