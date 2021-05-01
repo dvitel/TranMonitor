@@ -69,7 +69,7 @@ function sleep(ms) {
 //----------------------------------------------------------------
 
 function timeout(ms) {
-    return new Promise((resolve, reject) => setTimeout(reject, ms, new timeoutError("Timeout")));
+    return new Promise((resolve, reject) => setTimeout(reject, ms, new TimeoutError("Timeout")));
 }
 //----------------------------------------------------------------
 
@@ -109,15 +109,6 @@ async function rethrow(f, error) {
     }
 }
 
-
-function noThrow(fn, context, ...args) {
-    try {
-        return fn.apply(context, args);
-    }
-    catch(e) {
-    }
-}
-
 function createStreamJsonReadliner(stream) {
     let awaitors = [];
     let results = [];
@@ -135,7 +126,7 @@ function createStreamJsonReadliner(stream) {
                     results.push(options);
                 }
             } catch (e) {
-                let res = InputError(e.message, line);
+                let res = new InputError(e.message, line);
                 if (awaitors.length > 0) {
                     let {reject} = awaitors.shift();
                     reject(res);
@@ -145,8 +136,8 @@ function createStreamJsonReadliner(stream) {
             }
         });        
     }
-    return function readJsonLine() {
-        return Promise((resolve, reject) => {
+    return function () {
+        return new Promise((resolve, reject) => {
             if (results.length > 0) {
                 let res = results.shift();
                 if (res instanceof Error) reject(res);
@@ -170,5 +161,4 @@ module.exports.trackTime = trackTime;
 module.exports.timed = timed;
 module.exports.rethrow = rethrow;
 module.exports.catchThrow = catchThrow;
-module.exports.noThrow = noThrow;
 module.exports.createStreamJsonReadliner = createStreamJsonReadliner;

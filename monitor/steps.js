@@ -1,5 +1,6 @@
 const sel = require("./selectors");
 const u = require("./utils");
+const ch = require("./check");
 
 async function goto (context, step) {
     try {
@@ -7,58 +8,58 @@ async function goto (context, step) {
     } catch (e) {
         throw new u.PolicyError(`Cannot reach ${step.url} in time`, step, null);
     }
-    await sleep(context.allocTime(step.cooldown || 100));
+    await u.sleep(context.allocTime(step.cooldown || 100));
 }
 
 async function click (context, step) {
     let element = await sel.select(context, step.selector || {}); 
         //default puppetter click uses window.querySelector - css. 
         //<a href="/New">New item</a> - css3 does not have :contains 
-    if (element == null) throw new u.PolicyError(`Cannot find element for click: ${step.selector}`, step, null);
+    if (element == null) throw new u.PolicyError(`Cannot find element for click`, step, null);
     try {
         await element.click();
-        await sleep(context.allocTime(step.cooldown || 100));
+        await u.sleep(context.allocTime(step.cooldown || 100));
     } catch (e) {
-        throw new u.PolicyError(`Cannot click element: ${step.selector}`, step, null);
+        throw new u.PolicyError(`Cannot click element`, step, null);
     }
 }
 
 async function input (context, step) {
     let element = await sel.select(context, step.selector || {});
-    if (element == null) throw new u.PolicyError(`Cannot find element for input: ${step.selector}`, step, null);
+    if (element == null) throw new u.PolicyError(`Cannot find element for input`, step, null);
     try {
         await element.type(step.text);
-        await sleep(context.allocTime(step.cooldown || 100));
+        await u.sleep(context.allocTime(step.cooldown || 100));
     } catch (e) {
-        throw new u.PolicyError(`Cannot input into element: ${step.selector}`, step, null);
+        throw new u.PolicyError(`Cannot input into element`, step, null);
     }
 }
 
 async function hover (context, step) {
     let element = await sel.select(context, step.selector || {});
-    if (element == null) throw new u.PolicyError(`Cannot find hovered element: ${step.selector}`, step, null);
+    if (element == null) throw new u.PolicyError(`Cannot find hovered element`, step, null);
     try {
         await element.hover();
-        await sleep(context.allocTime(step.cooldown || 100));
+        await u.sleep(context.allocTime(step.cooldown || 100));
     } catch (e) {
-        throw new u.PolicyError(`Cannot hover over element: ${step.selector}`, step, null);
+        throw new u.PolicyError(`Cannot hover over element`, step, null);
     }
 }
 
 async function focus (context, step) {
     let element = await sel.select(context, step.selector || {});
-    if (element == null) throw new u.PolicyError(`Cannot find element for focus: ${step.selector}`, step, null);
+    if (element == null) throw new u.PolicyError(`Cannot find element for focus`, step, null);
     try {
         await element.focus();
-        await sleep(context.allocTime(step.cooldown || 100));
+        await u.sleep(context.allocTime(step.cooldown || 100));
     } catch (e) {
-        throw new u.PolicyError(`Cannot focus on element: ${step.selector}`, step, null);
+        throw new u.PolicyError(`Cannot focus on element`, step, null);
     }
 }
 
 async function select (context, step) {
     let element = await sel.select(context, step.selector || {});
-    if (element == null) throw new u.PolicyError(`Cannot find element for select: ${step.selector}`, step, null);
+    if (element == null) throw new u.PolicyError(`Cannot find element for select`, step, null);
     //TODO: selection of option values
     try {
         var values = step.value;
@@ -66,9 +67,9 @@ async function select (context, step) {
             values = [step.value];
         }
         await element.select(...values);
-        await sleep(context.allocTime(step.cooldown || 100));
+        await u.sleep(context.allocTime(step.cooldown || 100));
     } catch (e) {
-        throw new u.PolicyError(`Cannot select element: ${step.selector}`, step, null);
+        throw new u.PolicyError(`Cannot select element`, step, null);
     }
 }
 
@@ -128,7 +129,30 @@ async function retry (context, step) {
     throw new u.PolicyError(`Step with name ${step.name} cannot be reached`, step, null);
 }
 
-const steps = { goto, click, input, select, hover, focus, tran, jmp, retry };
+//policy.checker is an array [ func, arg, arg .... ] where arg could be another func 
+//supported set of functions are defined in check.js
+async function validate(context, step) {
+    let policies = step.policies || [];
+    for (var i = 0; i < policies.length; i++) { //policy is selector with checker, policy without represents check for existance 
+        let policy = policies[i];
+        try {
+            var elements = sel.select(context, policy.selector);
+            if (!elements) elements = [];
+            if (!Array.isArray(elements)) elements = [elements];
+            var res = await ch.check(context, elements, policy.check);
+            if (!res) throw new u.PolicyError(`Policy was violated`, step, policy);
+        } catch (e) {
+            throw new u.PolicyError(`Policy check failed: ${e.message}`, step, policy);
+        }
+    }
+}
+
+async function query(context, step) { //just executes selector - simple validation
+    let element = await sel.select(context, step.selector || {});
+    if (element == null) throw new u.PolicyError(`Query returned no result`, step, null); 
+}
+
+const steps = { goto, click, input, select, hover, focus, tran, jmp, retry, validate, query };
 
 //this is subsequence of steps - execution of main, fallback or named sequence
 async function tran(context, {tran, startAt = 0}) { //step.tran contains sequence of steps

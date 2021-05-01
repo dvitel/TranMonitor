@@ -30,7 +30,7 @@ async function wait4CloudFlare(page, timeout) {
 	while(cfDetected) {
 		console.logd('-------- cloudflare detected --------------------');
 		if (timeFrom(beginTickCount) > timeout) {
-			throw new utils.timeoutError('Timeout');
+			throw new utils.TimeoutError('Timeout');
 		}
 		await utils.sleep(500);
 		cfDetected = await detectCloudFlare(page);

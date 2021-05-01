@@ -2,6 +2,7 @@ const jp = require("jsonpath");
 const u = require("./utils");
 const xpath = require("xpath");
 const xmlParser = require("xmldom").DOMParser;
+// const puppeteer = require("puppeteer");
 
 async function css (context, selector) {
     //we do not use queryObjects - because it is limited css selectors 
@@ -10,6 +11,7 @@ async function css (context, selector) {
     // var selectedElementsArr = await selectedElements.jsonValue();
     if (jsHandle && jsHandle.asElement) {
         var selectedElement = jsHandle.asElement();
+        if (!selectedElement || !(selectedElement.constructor.name == "ElementHandle")) return null;
         return selectedElement;
     }
     return null;
@@ -61,13 +63,13 @@ async function http (context, selector) {
     }
 }
 
-var selectors = { css, vars, jsonpath, http };
+var selectors = { css, vars, jsonpath, http, javascript };
 
 async function select(context, selector) {
 	if (selector.type in selectors) {
 		const selectorFunc = selectors[selector.type];
 		let element = await selectorFunc(context, selector);
-		if (element == null || !(element instanceof ElementHandle)) {
+		if (element == null) {
             return null; //throw new u.PolicyError(`Cannot find element: ${selector}`, context.step, null);			
 		}
 		if (selector.bind) {

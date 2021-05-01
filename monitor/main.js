@@ -48,7 +48,7 @@ function getEmptyContext() {
 			doneSteps: [],
 			retries: {}
 		},				
-		allocTime = u.trackTime(monitorSettings.globalTransactionTimeoutMs), //time tracker for step timeouts
+		allocTime: u.trackTime(monitorSettings.globalTransactionTimeoutMs), //time tracker for step timeouts
 		//this is stack of transactions, main transaction sequence has index 0 
 		trans: [], //we execute current set of steps - it is changed on fallback or merge
 		// mainTran: [], //original steps
@@ -57,7 +57,7 @@ function getEmptyContext() {
 }
 
 //here we setup all handlers for events to collect web context and switch windows.
-async function setPageHandlers(page, context) {
+async function setPageHandlers(page, context, options) {
 	//TODO: check that setPageHandlers was not called for page before  
 	if (page.monitorHandlersSet) return;
 	let viewport = {};
@@ -93,7 +93,7 @@ async function setPageHandlers(page, context) {
 
 	page.on("popup", async newPage => { //other page became in front - we just change context 
 		console.logd("New window appears");
-		await setPageHandlers(newPage, context);
+		await setPageHandlers(newPage, context, options);
 		context.pages.push(context.page);
 		context.page = newPage;
 		//TODO: stack of pages 
@@ -177,18 +177,22 @@ async function run (options) { //creating async scope
 	context.jquery = await u.rethrow(u.readFile("/jquery-3.6.0.min.js"), `No jquery found to inject. Context failed to init`);
 
 	//global transaction timeout
-	await timed(monitorSettings.globalTransactionTimeoutMs, async () => {
-		await u.rethrow(async () => {
-			context.browser = await puppeteer.launch(args)
-			context.page = await context.browser.newPage();
-			await setPageHandlers(context.page);
-		}, "Cannot launch browser. Context failed to init");
-		
-		await steps.tran(context, { tran: options.tran });
+	await u.timed(monitorSettings.globalTransactionTimeoutMs, async () => {
+		try {
+			await u.rethrow(async () => {
+				context.browser = await puppeteer.launch(args);
+				context.page = await context.browser.newPage();
+				await setPageHandlers(context.page, context, options);
+			}, "Cannot launch browser. Context failed to init");
+			
+			await steps.tran(context, { tran: options.tran });
+		} finally {
+			try {
+				if (context.browser) await context.browser.close();
+			} catch (e) {} //ignore close errors
+		}
 	});
 
-	//cleanup
-	if (context.browser) try { context.browser.close(); } catch (e) {}
 }
 
 console.logd("Starting transaction monitor in debug mode");
@@ -196,7 +200,18 @@ console.logd("Starting transaction monitor in debug mode");
 (async function () {
 	let readJsonLine = u.createStreamJsonReadliner(process.stdin);
 	while (true) {
-		let options = await readJsonLine();
-		await run(options);
+		try {
+			let options = await readJsonLine();
+			await run(options);
+		} catch (e) {
+			if (e instanceof u.PolicyError) {
+				console.error({error: "TransactionPolicyViolation", msg: e.message, step: e.step, policy: e.policy})
+			}
+			else if (e instanceof u.TimeoutError) {
+				console.error({error: "TransactionTimeout"})
+			} else {
+				console.error({error: "Error", msg: e.message, original: e.original ? e.original.message : null })
+			}
+		}
 	}
 }) ();

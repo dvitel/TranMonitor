@@ -1,1 +1,1 @@
-{ "headless": false, "tran": [ { "type": "goto", "url": "https://localhost:5001/", "timeout": 10000, "cooldown": 1000 }, { "type": "click", "selector": { "type": "css", "query": "a:contains('New Item2')"}, "cooldown": 3000 } ] }
+{ "headless": false, "tran": [ { "type": "goto", "url": "https://localhost:5001/", "timeout": 10000, "cooldown": 1000 }, { "type": "click", "selector": { "type": "css", "query": "a:contains('New Item')"}, "cooldown": 3000 }, { "type": "input", "selector": { "type": "css", "query": "[name=Item.Desc]"}, "text": "GENERATED" } ]}
