@@ -1,6 +1,7 @@
 const sel = require("./selectors");
 const u = require("./utils");
-const ch = require("./check");
+const check = require("./check");
+const gen = require("./gen")
 
 async function goto (context, step) {
     try {
@@ -28,7 +29,9 @@ async function input (context, step) {
     let element = await sel.select(context, step.selector || {});
     if (element == null) throw new u.PolicyError(`Cannot find element for input`, step, null);
     try {
-        await element.type(step.text);
+        //here we check if text should be generated 
+        var text = gen(context, step.text);
+        await element.type(text);
         await u.sleep(context.allocTime(step.cooldown || 100));
     } catch (e) {
         throw new u.PolicyError(`Cannot input into element`, step, null);
@@ -132,14 +135,14 @@ async function retry (context, step) {
 //policy.checker is an array [ func, arg, arg .... ] where arg could be another func 
 //supported set of functions are defined in check.js
 async function validate(context, step) {
-    let policies = step.policies || [];
+    let policies = step.policy || [];
     for (var i = 0; i < policies.length; i++) { //policy is selector with checker, policy without represents check for existance 
         let policy = policies[i];
         try {
-            var elements = sel.select(context, policy.selector);
+            var elements = await sel.select(context, policy.selector);
             if (!elements) elements = [];
             if (!Array.isArray(elements)) elements = [elements];
-            var res = await ch.check(context, elements, policy.check);
+            var res = await check(context, elements, policy.check);
             if (!res) throw new u.PolicyError(`Policy was violated`, step, policy);
         } catch (e) {
             throw new u.PolicyError(`Policy check failed: ${e.message}`, step, policy);

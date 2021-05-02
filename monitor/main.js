@@ -186,6 +186,8 @@ async function run (options) { //creating async scope
 			}, "Cannot launch browser. Context failed to init");
 			
 			await steps.tran(context, { tran: options.tran });
+
+			console.log({ error: null }); //TODO: statistics of tran execution
 		} finally {
 			try {
 				if (context.browser) await context.browser.close();

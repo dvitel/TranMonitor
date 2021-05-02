@@ -7,12 +7,16 @@ const xmlParser = require("xmldom").DOMParser;
 async function css (context, selector) {
     //we do not use queryObjects - because it is limited css selectors 
     //NOTE: this is logic for css selectors
-    const jsHandle = await context.page.evaluateHandle((query) => window._$_(query)[0], selector.query)
-    // var selectedElementsArr = await selectedElements.jsonValue();
-    if (jsHandle && jsHandle.asElement) {
-        var selectedElement = jsHandle.asElement();
-        if (!selectedElement || !(selectedElement.constructor.name == "ElementHandle")) return null;
-        return selectedElement;
+    try {
+        const jsHandle = await context.page.evaluateHandle((query) => window._$_(query)[0], selector.query)
+        // var selectedElementsArr = await selectedElements.jsonValue();
+        if (jsHandle && jsHandle.asElement) {
+            var selectedElement = jsHandle.asElement();
+            if (!selectedElement || !(selectedElement.constructor.name == "ElementHandle")) return null;
+            return selectedElement;
+        }
+    } catch (e) {
+        //return null;        
     }
     return null;
 } 
@@ -67,7 +71,14 @@ var selectors = { css, vars, jsonpath, http, javascript };
 
 async function select(context, selector) {
 	if (selector.type in selectors) {
-		const selectorFunc = selectors[selector.type];
+        const selectorFunc = selectors[selector.type];
+        if (selector.vars) {
+            Object.keys(selector.vars).forEach(v => {
+                let variable = selector.vars[v];
+                let varValue = context.vars[variable].toString(); //TODO
+                selector.query = selector.query.replace(v, varValue)
+            });
+        }
 		let element = await selectorFunc(context, selector);
 		if (element == null) {
             return null; //throw new u.PolicyError(`Cannot find element: ${selector}`, context.step, null);			

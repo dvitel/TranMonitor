@@ -17,24 +17,9 @@
         },
         {
             "type": "input",
-            "selector": { "type": "css", "query": "[name=Item.Desc]"},
-            "text": "This text should be interpolated and could contain metafunctions"
+            "selector": { "type": "css", "query": "[name='Item.Desc']"},
+            "text": { "eval": "'GENERATED:' + randInt()", "bind": "itemName" }
         },
-        {
-            "type": "input",
-            "selector": { "type": "css", "query": "[name=Item.From]"},
-            "text": "2021-04-20T20:00"
-        },
-        {
-            "type": "input",
-            "selector": { "type": "css", "query": "[name=Item.To]"},
-            "text": "2021-04-25T20:00"
-        },     
-        {
-            "type": "input",
-            "selector": { "type": "css", "query": "[name=Item.EstimatedTime]"},
-            "text": "01:00:00"
-        }, 
         {
             "type": "click",
             "selector": { "type": "css", "query": "button:contains('Save Item')"},
@@ -50,8 +35,8 @@
             "type": "validate",
             "policy": [
                 {
-                    "selector": { "type": "css", "query": "div:contains('This text should be interpolated and could contain metafunctions')" },
-                    "check": { "type": "exists" }
+                    "selector": { "type": "css", "query": "div:contains('$itemName')", "vars": { "$itemName": "itemName" } },
+                    "check": "!!$0"
                 }
             ]
         }
